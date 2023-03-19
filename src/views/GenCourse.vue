@@ -1,6 +1,6 @@
 <template>
   <GenLoader v-if="loading" />
-  <div v-else-if="state.noVideo">
+  <div v-else-if="state.isNoVideoAvailable">
     <h2 class="text-4xl tracking-wide font-bold text-center">
       Sorry! There are no videos in this course. <br />
       Please go to the
@@ -12,16 +12,16 @@
     <aside class="gen-course__sidebar">
       <h2 class="gen-course__heading">Lessons navigation:</h2>
       <GenLessonsList
-        :currentVideoIndex="state.currentVideoIndex"
+        :currentVideoIndex="state.currentVideoIDx"
         :lessons="state.course.lessons"
-        :watchedVideos="state.watchedVideos"
+        :watchedVideos="state.watchedLessons"
         @clicked:lesson="selectLesson"
       />
     </aside>
     <main class="gen-course__main">
       <div class="gen-course__info">
         <RouterLink to="/" class="gen-back-to-home">
-          <GenHomeIcon class="h-6 w-6 mr-2" />
+          <HomeIcon class="h-6 w-6 mr-2" />
           <span>Back to courses</span>
         </RouterLink>
         <h1 class="gen-course__heading">
@@ -31,7 +31,7 @@
       </div>
       <div class="relative aspect-video group">
         <GenVideoPlayer
-          :key="state.currentVideoIndex"
+          :key="state.currentVideoIDx"
           :posterUrl="state.posterSrc"
           :videoUrl="state.videoUrl"
           :controls="true"
@@ -77,31 +77,61 @@
 import { setLocalData, getLocalData, fetchData } from "@/helpers";
 import { ref, defineComponent, onMounted, watch, reactive } from "vue";
 import { useRoute } from "vue-router";
+import { Course, CourseProgress, Lesson } from "@/types";
 import GenLessonsList from "@/components/GenLessonsList.vue";
 import GenLoader from "@/components/GenLoader.vue";
 import GenVideoPlayer from "@/components/GenVideoPlayer.vue";
-import { Course, CourseProgress, Lesson } from "@/types";
-import GenHomeIcon from "@/components/icons/GenHomeIcon.vue";
+import { HomeIcon } from "@heroicons/vue/24/solid";
 
 export default defineComponent({
   components: {
     GenLessonsList,
     GenLoader,
     GenVideoPlayer,
-    GenHomeIcon,
+    HomeIcon,
   },
   setup() {
     const state = reactive({
       course: {} as Course,
-      sortedLessons: [] as Lesson[],
-      noVideo: false,
-      currentVideoIndex: 0,
-      watchedVideos: new Set() as Set<number>,
+      isNoVideoAvailable: false,
+      currentVideoIDx: 0,
+      watchedLessons: new Set() as Set<number>,
       videoUrl: "",
-      posterSrc: require("@/assets/no-image.webp"),
+      posterSrc: require("@/assets/poster.webp"),
     });
     const loading = ref<Boolean>(true);
     const coursesProgress = ref<Map<string, CourseProgress>>();
+
+    // handlers
+    const playNextVideo = () => {
+      if (state.currentVideoIDx < state.course.lessons.length - 1) {
+        state.watchedLessons.add(state.currentVideoIDx);
+
+        if (
+          state.course.lessons[state.currentVideoIDx + 1].status !== "locked"
+        ) {
+          state.currentVideoIDx = state.currentVideoIDx + 1;
+        }
+
+        saveProgress();
+      }
+    };
+
+    const saveProgress = () => {
+      const progress = {
+        currentVideo: state.currentVideoIDx,
+        watchedVideos: state.watchedLessons,
+      };
+
+      coursesProgress.value?.set(state.course.id, progress);
+      coursesProgress.value &&
+        setLocalData("courseProgress", coursesProgress.value);
+    };
+
+    const selectLesson = (idx: number) => {
+      state.currentVideoIDx = idx;
+      saveProgress();
+    };
 
     onMounted(async () => {
       const route = useRoute();
@@ -112,7 +142,7 @@ export default defineComponent({
       route.meta.title = state.course.title;
       loading.value = false;
 
-      state.noVideo = !state.course.lessons.some((el) => el.link);
+      state.isNoVideoAvailable = !state.course.lessons.some((el) => el.link);
 
       // get local course progress
       const progress = getLocalData("courseProgress") as Map<
@@ -127,47 +157,17 @@ export default defineComponent({
         const courseLocalData = progress.get(courseID);
 
         if (courseLocalData) {
-          state.currentVideoIndex = courseLocalData.currentVideo;
-          state.watchedVideos = courseLocalData.watchedVideos;
+          state.currentVideoIDx = courseLocalData.currentVideo;
+          state.watchedLessons = courseLocalData.watchedVideos;
         }
       } else {
-        state.currentVideoIndex = 0;
+        state.currentVideoIDx = 0;
         state.videoUrl = state.course?.lessons[0]?.link || "";
       }
     });
 
-    const playNextVideo = () => {
-      if (state.currentVideoIndex < state.course.lessons.length - 1) {
-        state.watchedVideos.add(state.currentVideoIndex);
-
-        if (
-          state.course.lessons[state.currentVideoIndex + 1].status !== "locked"
-        ) {
-          state.currentVideoIndex = state.currentVideoIndex + 1;
-        }
-
-        saveProgress();
-      }
-    };
-
-    const saveProgress = () => {
-      const progress = {
-        currentVideo: state.currentVideoIndex,
-        watchedVideos: state.watchedVideos,
-      };
-
-      coursesProgress.value?.set(state.course.id, progress);
-      coursesProgress.value &&
-        setLocalData("courseProgress", coursesProgress.value);
-    };
-
-    const selectLesson = (idx: number) => {
-      state.currentVideoIndex = idx;
-      saveProgress();
-    };
-
     watch(
-      () => state.currentVideoIndex,
+      () => state.currentVideoIDx,
       (newIdx) => {
         const { previewImageLink, order, link } = state.course?.lessons[
           newIdx

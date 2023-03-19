@@ -19,8 +19,8 @@ import { PropType, defineComponent } from "vue";
 
 type GenLessonsListProps = {
   lessons: Lesson[];
-  currentVideoIndex: number;
-  watchedVideos: Set<number>;
+  currentVideoIDx: number;
+  watchedLessons: Set<number>;
 };
 
 export default defineComponent({
@@ -31,11 +31,11 @@ export default defineComponent({
       default: () => [],
     },
     currentVideoIndex: {
-      type: Number as PropType<GenLessonsListProps["currentVideoIndex"]>,
+      type: Number as PropType<GenLessonsListProps["currentVideoIDx"]>,
       default: 0,
     },
     watchedVideos: {
-      type: Set as PropType<GenLessonsListProps["watchedVideos"]>,
+      type: Set as PropType<GenLessonsListProps["watchedLessons"]>,
       default: () => new Set(),
     },
   },

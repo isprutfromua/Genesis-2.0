@@ -108,12 +108,12 @@ export default defineComponent({
       isControlsVisible: false,
       isLoading: true,
       error: "",
-      video: null as HTMLVideoElement | null,
+      videoEl: null as HTMLVideoElement | null,
       keyboardControlEnabled: true,
     });
 
     const onVideoLoaded = () => {
-      state.video = videoPlayerRef.value;
+      state.videoEl = videoPlayerRef.value;
       state.isLoading = false;
     };
 
@@ -122,31 +122,47 @@ export default defineComponent({
       state.isLoading = false;
     };
 
-    const onPlayPauseClick = () => {
+    const setEventListeners = () => {
+      state.videoEl?.addEventListener("play", () => {
+        state.isPlaying = true;
+      });
+
+      state.videoEl?.addEventListener("pause", () => {
+        state.isPlaying = false;
+      });
+
+      state.videoEl?.addEventListener("volumechange", () => {
+        state.isMuted = state.videoEl?.muted;
+      });
+
+      document.addEventListener("keydown", onKeyboardEvent);
+    };
+
+    const togglePlayPause = () => {
       if (state.isPlaying) {
-        state.video?.pause();
+        state.videoEl?.pause();
       } else {
-        state.video?.play();
+        state.videoEl?.play();
       }
     };
 
-    const onMuteClick = () => {
+    const toggleMuteUnmute = () => {
       state.isMuted = !state.isMuted;
-      state.video!.muted = state.isMuted;
+      state.videoEl!.muted = state.isMuted;
     };
 
-    const onTogglePictureInPicture = () => {
+    const togglePictureInPicture = () => {
       if (document.pictureInPictureElement) {
         document.exitPictureInPicture();
       } else {
-        state.video?.requestPictureInPicture();
+        state.videoEl?.requestPictureInPicture();
       }
     };
 
     const onMouseEnter = () => {
       if (props.isHoverPlay && !props.controls) {
         state.isPlaying = true;
-        state.video?.play();
+        state.videoEl?.play();
       } else if (!state.isControlsVisible) {
         state.isControlsVisible = true;
       }
@@ -155,7 +171,7 @@ export default defineComponent({
     const onMouseLeave = () => {
       if (props.isHoverPlay && !props.controls) {
         state.isPlaying = false;
-        state.video?.pause();
+        state.videoEl?.pause();
       } else if (state.isControlsVisible) {
         state.isControlsVisible = false;
       }
@@ -168,25 +184,25 @@ export default defineComponent({
       switch (event.code) {
         case "Space":
           event.preventDefault();
-          onPlayPauseClick();
+          togglePlayPause();
           break;
         case "KeyM":
-          onMuteClick();
+          toggleMuteUnmute();
           break;
         case "KeyF":
-          onTogglePictureInPicture();
+          togglePictureInPicture();
           break;
         case "ArrowRight":
-          state.video!.currentTime += 5;
+          state.videoEl!.currentTime += 5;
           break;
         case "ArrowLeft":
-          state.video!.currentTime -= 5;
+          state.videoEl!.currentTime -= 5;
           break;
         case "ArrowUp":
-          state.video!.playbackRate += 0.25;
+          state.videoEl!.playbackRate += 0.25;
           break;
         case "ArrowDown":
-          state.video!.playbackRate -= 0.25;
+          state.videoEl!.playbackRate -= 0.25;
           break;
       }
     };
@@ -210,15 +226,15 @@ export default defineComponent({
         );
       });
       hls.on(Hls.Events.MANIFEST_PARSED, () => {
-        props.autoplay && state.video?.play();
+        props.autoplay && state.videoEl?.play();
       });
     };
 
-    onMounted(() => {
-      state.video = videoPlayerRef.value;
+    onMounted(async () => {
+      state.videoEl = videoPlayerRef.value;
       const { videoUrl } = props;
 
-      if (!videoUrl?.length || !state.video) {
+      if (!videoUrl?.length || !state.videoEl) {
         setError(
           "No video.Error happened.Try to refresh current page, or pick another video."
         );
@@ -230,28 +246,16 @@ export default defineComponent({
         setError("HLS is not supported in this browser");
 
         return;
-      } else if (state.video && isHlsUrl(videoUrl) && Hls.isSupported()) {
-        setupHls(videoUrl, state.video);
+      } else if (state.videoEl && isHlsUrl(videoUrl) && Hls.isSupported()) {
+        setupHls(videoUrl, state.videoEl);
       } else {
-        state.video.src = videoUrl;
-        state.video.addEventListener("loadedmetadata", () => {
-          props.autoplay && state.video?.play();
+        state.videoEl.src = videoUrl;
+        state.videoEl.addEventListener("loadedmetadata", () => {
+          props.autoplay && state.videoEl?.play();
         });
       }
 
-      state.video.addEventListener("play", () => {
-        state.isPlaying = true;
-      });
-
-      state.video.addEventListener("pause", () => {
-        state.isPlaying = false;
-      });
-
-      state.video.addEventListener("volumechange", () => {
-        state.isMuted = state.video?.muted;
-      });
-
-      document.addEventListener("keydown", onKeyboardEvent);
+      setEventListeners();
     });
 
     onUnmounted(() => {
