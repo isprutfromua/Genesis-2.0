@@ -35,6 +35,7 @@
           :posterUrl="state.posterSrc"
           :videoUrl="state.videoUrl"
           :autoplay="true"
+          @video:ended="playNextVideo"
           muted
           loop
         />
@@ -123,6 +124,7 @@ export default defineComponent({
 
       state.noVideo = !state.course.lessons.some((el) => el.link);
 
+      // get local course progress
       const progress = getLocalData("courseProgress") as Map<
         string,
         CourseProgress
@@ -153,6 +155,20 @@ export default defineComponent({
         return sorted;
       } else return state.course?.lessons;
     });
+
+    const playNextVideo = () => {
+      if (state.currentVideoIndex < state.course.lessons.length - 1) {
+        state.watchedVideos.add(state.currentVideoIndex);
+
+        if (
+          state.course.lessons[state.currentVideoIndex + 1].status !== "locked"
+        ) {
+          state.currentVideoIndex = state.currentVideoIndex + 1;
+        }
+
+        saveProgress();
+      }
+    };
 
     const saveProgress = () => {
       const progress = {
@@ -194,6 +210,7 @@ export default defineComponent({
       SpeakerWaveIcon,
       SpeakerXMarkIcon,
       loading,
+      playNextVideo,
     };
   },
 });

@@ -14,6 +14,8 @@
       :muted="isHoverPlay || state.isMuted"
       :preload="isHoverPlay ? 'metadata' : 'auto'"
       @loadedmetadata="onVideoLoaded"
+      @error="onVideoError"
+      @ended="() => $emit('video:ended')"
     ></video>
 
     <div
