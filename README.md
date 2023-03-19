@@ -32,7 +32,7 @@ npm install or yarn install
 Для запуску додатку потрібно ввести наступну команду:
 
 ```
-npm run serve or yarn install
+npm run serve or yarn serve
 ```
 
 Після запуску додатку він буде доступний за адресою http://localhost:8080/
