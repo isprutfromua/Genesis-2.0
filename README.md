@@ -19,7 +19,6 @@
 - typescript
 - tailwind
 - hls.js
-- @heroicons/vue
 
 ## Як користуватись
 

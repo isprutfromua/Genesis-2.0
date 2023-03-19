@@ -41,36 +41,6 @@
     >
       {{ state.error }}
     </div>
-
-    <div
-      v-if="!isHoverPlay"
-      class="absolute inset-0 flex items-center justify-center bg-black bg-opacity-25 transition-opacity duration-300 opacity-0"
-      :class="{ 'opacity-100': state.isControlsVisible }"
-    >
-      <GenPlayerButton @clicked="onPlayPauseClick">
-        <component
-          :is="state.isPlaying ? PauseIcon : PlayIcon"
-          class="h-20 w-20 text-black"
-        />
-      </GenPlayerButton>
-
-      <GenPlayerButton
-        class="ml-2 absolute bottom-5 right-5"
-        @click="onMuteClick"
-      >
-        <component
-          :is="state.isMuted ? SpeakerXMarkIcon : SpeakerWaveIcon"
-          class="h-8 w-8 text-black"
-        />
-      </GenPlayerButton>
-
-      <GenPlayerButton
-        class="ml-2 absolute top-5 right-5"
-        @click="onTogglePictureInPicture"
-      >
-        <ArrowTopRightOnSquareIcon class="h-8 w-8 text-black" />
-      </GenPlayerButton>
-    </div>
   </div>
 </template>
 <script lang="ts">
@@ -82,15 +52,7 @@ import {
   ref,
   PropType,
 } from "vue";
-import {
-  PlayIcon,
-  PauseIcon,
-  SpeakerWaveIcon,
-  SpeakerXMarkIcon,
-  ArrowTopRightOnSquareIcon,
-} from "@heroicons/vue/24/solid";
 import Hls from "hls.js";
-import GenPlayerButton from "./GenPlayerButton.vue";
 
 function isHlsUrl(url: string): boolean {
   return url.endsWith(".m3u8") || url.includes(".m3u8?");
@@ -108,14 +70,6 @@ type GenVideoPlayerProps = {
 
 export default defineComponent({
   name: "VideoPlayer",
-  components: {
-    PlayIcon,
-    PauseIcon,
-    SpeakerWaveIcon,
-    SpeakerXMarkIcon,
-    ArrowTopRightOnSquareIcon,
-    GenPlayerButton,
-  },
   props: {
     posterUrl: {
       type: String as PropType<GenVideoPlayerProps["posterUrl"]>,
@@ -213,6 +167,7 @@ export default defineComponent({
 
       switch (event.code) {
         case "Space":
+          event.preventDefault();
           onPlayPauseClick();
           break;
         case "KeyM":
@@ -305,18 +260,10 @@ export default defineComponent({
 
     return {
       state,
-      PlayIcon,
-      PauseIcon,
-      SpeakerWaveIcon,
-      SpeakerXMarkIcon,
       onMouseEnter,
       onMouseLeave,
       onVideoLoaded,
       onVideoError,
-      onPlayPauseClick,
-      onMuteClick,
-      onTogglePictureInPicture,
-      ArrowTopRightOnSquareIcon,
       videoPlayerRef,
     };
   },

@@ -21,7 +21,7 @@
     <main class="gen-course__main">
       <div class="gen-course__info">
         <RouterLink to="/" class="gen-back-to-home">
-          <HomeIcon class="h-6 w-6 mr-2" />
+          <GenHomeIcon class="h-6 w-6 mr-2" />
           <span>Back to courses</span>
         </RouterLink>
         <h1 class="gen-course__heading">
@@ -74,13 +74,6 @@
 </template>
 
 <script lang="ts">
-import {
-  HomeIcon,
-  PlayIcon,
-  PauseIcon,
-  SpeakerWaveIcon,
-  SpeakerXMarkIcon,
-} from "@heroicons/vue/24/solid";
 import { setLocalData, getLocalData, fetchData } from "@/helpers";
 import { ref, defineComponent, onMounted, watch, reactive } from "vue";
 import { useRoute } from "vue-router";
@@ -88,13 +81,14 @@ import GenLessonsList from "@/components/GenLessonsList.vue";
 import GenLoader from "@/components/GenLoader.vue";
 import GenVideoPlayer from "@/components/GenVideoPlayer.vue";
 import { Course, CourseProgress, Lesson } from "@/types";
+import GenHomeIcon from "@/components/icons/GenHomeIcon.vue";
 
 export default defineComponent({
   components: {
-    HomeIcon,
     GenLessonsList,
     GenLoader,
     GenVideoPlayer,
+    GenHomeIcon,
   },
   setup() {
     const state = reactive({
@@ -190,10 +184,6 @@ export default defineComponent({
     return {
       state,
       selectLesson,
-      PlayIcon,
-      PauseIcon,
-      SpeakerWaveIcon,
-      SpeakerXMarkIcon,
       loading,
       playNextVideo,
     };
