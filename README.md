@@ -35,7 +35,7 @@ npm install or yarn install
 npm run serve or yarn install
 ```
 
-Після запуску додатку він буде доступний за адресою `http://localhost:8080/
+Після запуску додатку він буде доступний за адресою http://localhost:8080/
 
 ## Майбутні покращення:
 
