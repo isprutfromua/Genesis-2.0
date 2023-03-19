@@ -7,7 +7,7 @@
   </div>
   <div v-else>
     <h1 class="text-4xl font-bold mb-10">Courses laboratory</h1>
-    <div class="grid grid-cols-2 2xl:grid-cols-3 gap-4 xl:gap-8">
+    <div class="grid grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4 gap-4 xl:gap-8">
       <GenCourseTile
         v-for="(course, index) in paginatedCourses"
         :key="course.id"

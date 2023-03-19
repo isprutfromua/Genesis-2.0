@@ -17,7 +17,7 @@
       :disabled="locked"
       @click.prevent="() => $emit('clicked')"
     >
-      <span>{{ title }}</span>
+      <span class="text-left">{{ title }}</span>
       <span v-if="!link" class="text-red-300">no video</span>
       <p class="gen-lesson__name">
         <ClockIcon class="h-4 w-4 inline-block mr-1" />

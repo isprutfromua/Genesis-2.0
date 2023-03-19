@@ -13,7 +13,7 @@
       <h2 class="gen-course__heading">Lessons navigation:</h2>
       <GenLessonsList
         :currentVideoIndex="state.currentVideoIndex"
-        :lessons="sortedLessons"
+        :lessons="state.course.lessons"
         :watchedVideos="state.watchedVideos"
         @clicked:lesson="selectLesson"
       />
@@ -34,6 +34,7 @@
           :key="state.currentVideoIndex"
           :posterUrl="state.posterSrc"
           :videoUrl="state.videoUrl"
+          :controls="true"
           :autoplay="true"
           @video:ended="playNextVideo"
           muted
@@ -81,14 +82,7 @@ import {
   SpeakerXMarkIcon,
 } from "@heroicons/vue/24/solid";
 import { setLocalData, getLocalData, fetchData } from "@/helpers";
-import {
-  ref,
-  defineComponent,
-  onMounted,
-  watch,
-  computed,
-  reactive,
-} from "vue";
+import { ref, defineComponent, onMounted, watch, reactive } from "vue";
 import { useRoute } from "vue-router";
 import GenLessonsList from "@/components/GenLessonsList.vue";
 import GenLoader from "@/components/GenLoader.vue";
@@ -105,6 +99,7 @@ export default defineComponent({
   setup() {
     const state = reactive({
       course: {} as Course,
+      sortedLessons: [] as Lesson[],
       noVideo: false,
       currentVideoIndex: 0,
       watchedVideos: new Set() as Set<number>,
@@ -119,6 +114,7 @@ export default defineComponent({
       const courseID = route.params.id as string;
 
       state.course = await fetchData(courseID);
+      state.course.lessons.sort((prev, next) => prev.order - next.order);
       route.meta.title = state.course.title;
       loading.value = false;
 
@@ -144,16 +140,6 @@ export default defineComponent({
         state.currentVideoIndex = 0;
         state.videoUrl = state.course?.lessons[0]?.link || "";
       }
-    });
-
-    const sortedLessons = computed(() => {
-      if (state.course?.lessons?.length) {
-        const sorted = [...state.course?.lessons].sort(
-          (prev, next) => prev.order - next.order
-        );
-
-        return sorted;
-      } else return state.course?.lessons;
     });
 
     const playNextVideo = () => {
@@ -203,7 +189,6 @@ export default defineComponent({
 
     return {
       state,
-      sortedLessons,
       selectLesson,
       PlayIcon,
       PauseIcon,
@@ -218,7 +203,7 @@ export default defineComponent({
 
 <style>
 .gen-course {
-  @apply flex flex-col-reverse xl:flex-row;
+  @apply flex flex-col-reverse items-start xl:flex-row;
 }
 
 .gen-course__sidebar {

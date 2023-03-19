@@ -12,6 +12,7 @@
       :src="videoUrl"
       :loop="isHoverPlay"
       :muted="isHoverPlay || state.isMuted"
+      :controls="!isHoverPlay && controls"
       :preload="isHoverPlay ? 'metadata' : 'auto'"
       @loadedmetadata="onVideoLoaded"
       @error="onVideoError"

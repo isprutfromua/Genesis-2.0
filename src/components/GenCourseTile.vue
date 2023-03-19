@@ -109,6 +109,6 @@ export default defineComponent({
 }
 
 .gen-course-tile__wideo-wrapper {
-  @apply w-full h-72 overflow-hidden;
+  @apply w-full h-44 overflow-hidden;
 }
 </style>
