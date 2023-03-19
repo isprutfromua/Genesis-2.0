@@ -15,22 +15,27 @@
 <script lang="ts">
 import GenLessonListItem from "@/components/GenLessonListItem.vue";
 import { Lesson } from "@/types";
-import { PropType } from "vue";
+import { PropType, defineComponent } from "vue";
 
-export default {
-  name: "MyComponent",
+type GenLessonsListProps = {
+  lessons: Lesson[];
+  currentVideoIndex: number;
+  watchedVideos: Set<number>;
+};
+
+export default defineComponent({
   components: { GenLessonListItem },
   props: {
     lessons: {
-      type: Array as PropType<Lesson[]>,
+      type: Array as PropType<GenLessonsListProps["lessons"]>,
       default: () => [],
     },
     currentVideoIndex: {
-      type: Number,
+      type: Number as PropType<GenLessonsListProps["currentVideoIndex"]>,
       default: 0,
     },
     watchedVideos: {
-      type: Set,
+      type: Set as PropType<GenLessonsListProps["watchedVideos"]>,
       default: () => new Set(),
     },
   },
@@ -39,5 +44,5 @@ export default {
       this.$emit("clicked:lesson", index);
     },
   },
-};
+});
 </script>

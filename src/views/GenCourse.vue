@@ -118,6 +118,7 @@ export default defineComponent({
       const courseID = route.params.id as string;
 
       state.course = await fetchData(courseID);
+      route.meta.title = state.course.title;
       loading.value = false;
 
       state.noVideo = !state.course.lessons.some((el) => el.link);

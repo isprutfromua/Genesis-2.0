@@ -65,16 +65,3 @@ export type Tag =
   | "learning ability"
   | "communication"
   | "psychology";
-
-export type GenCourseTileProps = {
-  course: Course;
-};
-
-export type GenLessonListItemProps = {
-  duration: number;
-  title: string;
-  link: string;
-  locked: boolean;
-  watched: boolean;
-  active: boolean;
-};

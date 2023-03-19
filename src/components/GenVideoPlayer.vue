@@ -71,7 +71,14 @@
   </div>
 </template>
 <script lang="ts">
-import { defineComponent, onMounted, onUnmounted, reactive, ref } from "vue";
+import {
+  defineComponent,
+  onMounted,
+  onUnmounted,
+  reactive,
+  ref,
+  PropType,
+} from "vue";
 import {
   PlayIcon,
   PauseIcon,
@@ -86,15 +93,15 @@ function isHlsUrl(url: string): boolean {
   return url.endsWith(".m3u8") || url.includes(".m3u8?");
 }
 
-interface VideoProps {
+type GenVideoPlayerProps = {
   posterUrl: string;
-  videoUrl?: string | (null | undefined);
+  videoUrl?: string | undefined;
   controls?: boolean;
   autoplay?: boolean;
   muted?: boolean;
   loop?: boolean;
   isHoverPlay: boolean;
-}
+};
 
 export default defineComponent({
   name: "VideoPlayer",
@@ -108,34 +115,34 @@ export default defineComponent({
   },
   props: {
     posterUrl: {
-      type: String,
+      type: String as PropType<GenVideoPlayerProps["posterUrl"]>,
       required: true,
     },
     videoUrl: {
-      type: String,
+      type: String as PropType<GenVideoPlayerProps["videoUrl"]>,
     },
     controls: {
-      type: Boolean,
+      type: Boolean as PropType<GenVideoPlayerProps["controls"]>,
       default: false,
     },
     autoplay: {
-      type: Boolean,
+      type: Boolean as PropType<GenVideoPlayerProps["autoplay"]>,
       default: false,
     },
     muted: {
-      type: Boolean,
+      type: Boolean as PropType<GenVideoPlayerProps["muted"]>,
       default: false,
     },
     loop: {
-      type: Boolean,
+      type: Boolean as PropType<GenVideoPlayerProps["loop"]>,
       default: false,
     },
     isHoverPlay: {
-      type: Boolean,
+      type: Boolean as PropType<GenVideoPlayerProps["isHoverPlay"]>,
       default: false,
     },
   },
-  setup(props: VideoProps) {
+  setup(props: GenVideoPlayerProps) {
     const videoPlayerRef = ref<HTMLVideoElement | null>(null);
     const state = reactive({
       isPlaying: false,
@@ -254,7 +261,9 @@ export default defineComponent({
       const { videoUrl } = props;
 
       if (!videoUrl?.length || !state.video) {
-        setError("No video.Error happened. Sorry 😭");
+        setError(
+          "No video.Error happened.Try to refresh current page, or pick another video."
+        );
 
         return;
       }

@@ -45,11 +45,15 @@
 import { ref, toRefs, onMounted, defineComponent, PropType } from "vue";
 import { StarIcon } from "@heroicons/vue/24/solid";
 import { formatTime, truncateText, useIntersectionObserver } from "@/helpers";
-import { GenCourseTileProps } from "@/types";
 import GenVideoPlayer from "@/components/GenVideoPlayer.vue";
+import { Course } from "@/types";
 
 const descriptionSize = 70;
 const animationClass = "skeleton-animation";
+
+export type GenCourseTileProps = {
+  course: Course;
+};
 
 export default defineComponent({
   components: { StarIcon, GenVideoPlayer },

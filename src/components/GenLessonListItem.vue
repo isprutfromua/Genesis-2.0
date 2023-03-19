@@ -37,7 +37,15 @@ import {
 } from "@heroicons/vue/24/solid";
 import { formatTime } from "@/helpers";
 import { defineComponent, PropType, toRefs, computed } from "vue";
-import { GenLessonListItemProps } from "@/types";
+
+type GenLessonListItemProps = {
+  duration: number;
+  title: string;
+  link: string;
+  locked: boolean;
+  watched: boolean;
+  active: boolean;
+};
 
 export default defineComponent({
   components: { LockClosedIcon, ClockIcon, PlayCircleIcon, CheckIcon },
