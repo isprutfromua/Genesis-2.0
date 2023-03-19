@@ -4,7 +4,7 @@ module.exports = {
   theme: {
     extend: {
       maxHeight: {
-        128: "32rem",
+        "video-list": "44rem",
       },
       backgroundSize: {
         160: "160%",

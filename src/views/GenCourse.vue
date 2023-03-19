@@ -1,17 +1,20 @@
 <template>
-  <div
-    v-if="!course.data"
-    class="inline-flex bg-white p-16 shadow-2xl rounded-2xl absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2"
-  >
-    <img :src="require('@/assets/loader.gif')" alt="Loader" />
+  <GenLoader v-if="loading" />
+  <div v-else-if="state.noVideo">
+    <h2 class="text-4xl tracking-wide font-bold text-center">
+      Sorry! There are no videos in this course. <br />
+      Please go to the
+      <router-link to="/" class="underline">courses page</router-link> and learn
+      another one.
+    </h2>
   </div>
-  <div class="gen-course" v-if="course.data">
+  <div class="gen-course" v-else>
     <aside class="gen-course__sidebar">
       <h2 class="gen-course__heading">Lessons navigation:</h2>
       <GenLessonsList
-        :currentVideoIndex="currentVideoIndex"
-        :lessons="course.data.lessons"
-        :watchedVideos="watchedVideos"
+        :currentVideoIndex="state.currentVideoIndex"
+        :lessons="sortedLessons"
+        :watchedVideos="state.watchedVideos"
         @clicked:lesson="selectLesson"
       />
     </aside>
@@ -22,47 +25,53 @@
           <span>Back to courses</span>
         </RouterLink>
         <h1 class="gen-course__heading">
-          {{ course.data.title }}
+          {{ state.course.title }}
         </h1>
-        <p class="my-2">{{ course.data.description }}</p>
+        <p class="my-2">{{ state.course.description }}</p>
       </div>
       <div class="relative aspect-video group">
-        <video
-          class="w-full h-full"
-          ref="videoPlayerRef"
-          :muted="isVideoMuted"
-          autoplay
-          @ended="() => playNextVideo()"
-          :poster="posterSrc"
-        >
-          <source :src="videoUrl" />
-        </video>
-        <button
-          ref="videoButtonRef"
-          class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-          @click="playVideoButtonClickHandler"
-        >
-          <Component
-            :is="isVideoPlaying ? PauseIcon : PlayIcon"
-            class="w-20 h-20 fill-white"
-          />
-        </button>
-        <button
-          ref="videoButtonRef"
-          class="absolute bottom-5 right-5 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
-          @click="muteVideoButtonClickHandler"
-        >
-          <Component
-            :is="isVideoMuted ? SpeakerXMarkIcon : SpeakerWaveIcon"
-            class="w-10 h-10 fill-white"
-          />
-        </button>
+        <GenVideoPlayer
+          :key="state.currentVideoIndex"
+          :posterUrl="state.posterSrc"
+          :videoUrl="state.videoUrl"
+          :autoplay="true"
+          muted
+          loop
+        />
       </div>
+      <section
+        class="mt-8 hidden xl:block"
+        aria-describedby="controls-section-heading"
+      >
+        <h2 class="text-2xl" id="controls-section-heading">
+          How to control player with keyboard:
+        </h2>
+        <ul
+          class="list-disc list-inside mt-4 text-xl"
+          aria-label="Keyboard controls"
+        >
+          <li class="mb-2">
+            <span class="font-bold">Spacebar:</span> Play/Pause
+          </li>
+          <li class="mb-2"><span class="font-bold">M:</span> Mute/unmute</li>
+          <li class="mb-2">
+            <span class="font-bold">F:</span> Enter Picture-in-picture mode
+          </li>
+          <li class="mb-2">
+            <span class="font-bold">←:</span> Seek backward 5 seconds
+          </li>
+          <li class="mb-2">
+            <span class="font-bold">→:</span> Seek forward 5 seconds
+          </li>
+          <li class="mb-2"><span class="font-bold">↑:</span> Increase speed</li>
+          <li><span class="font-bold">↓:</span> Decrease speed</li>
+        </ul>
+      </section>
     </main>
   </div>
 </template>
 
-<script setup>
+<script lang="ts">
 import {
   HomeIcon,
   PlayIcon,
@@ -70,125 +79,122 @@ import {
   SpeakerWaveIcon,
   SpeakerXMarkIcon,
 } from "@heroicons/vue/24/solid";
-import { setLocalData } from "@/helpers";
-import { ref, reactive, computed } from "vue";
-import GenLessonsList from "@/components/GenLessonsList.vue";
+import { setLocalData, getLocalData, fetchData } from "@/helpers";
+import {
+  ref,
+  defineComponent,
+  onMounted,
+  watch,
+  computed,
+  reactive,
+} from "vue";
 import { useRoute } from "vue-router";
+import GenLessonsList from "@/components/GenLessonsList.vue";
+import GenLoader from "@/components/GenLoader.vue";
+import GenVideoPlayer from "@/components/GenVideoPlayer.vue";
+import { Course, CourseProgress, Lesson } from "@/types";
 
-const course = reactive({ data: null });
-const currentVideoIndex = ref(0);
-const courseProgress = ref(new Map());
-const watchedVideos = ref(new Set());
-const videoPlayerRef = ref(null);
+export default defineComponent({
+  components: {
+    HomeIcon,
+    GenLessonsList,
+    GenLoader,
+    GenVideoPlayer,
+  },
+  setup() {
+    const state = reactive({
+      course: {} as Course,
+      noVideo: false,
+      currentVideoIndex: 0,
+      watchedVideos: new Set() as Set<number>,
+      videoUrl: "",
+      posterSrc: require("@/assets/no-image.webp"),
+    });
+    const loading = ref<Boolean>(true);
+    const coursesProgress = ref<Map<string, CourseProgress>>();
 
-// const previewImageLink = ref(
-//   course.data.lessons[currentVideoIndex].previewImageLink
-// );
-const previewImageLink = ref("");
-const posterSrc = computed(() => {
-  if (previewImageLink.value.length) {
-    return [
-      previewImageLink,
-      "/lesson-",
-      course.data.lessons[currentVideoIndex].order,
-      ".webp",
-    ].join("");
-  }
+    onMounted(async () => {
+      const route = useRoute();
+      const courseID = route.params.id as string;
 
-  return "";
-});
-const isVideoPlaying = ref(false);
-const isVideoMuted = ref(true);
-const videoUrl = computed(
-  () => course.data.lessons[currentVideoIndex.value].link
-);
+      state.course = await fetchData(courseID);
+      loading.value = false;
 
-const selectLesson = (index) => {
-  currentVideoIndex.value = index;
-  videoPlayerRef.value.load();
-  saveProgress();
-};
+      state.noVideo = !state.course.lessons.some((el) => el.link);
 
-const playVideoButtonClickHandler = () => {
-  if (isVideoPlaying.value) {
-    pauseVideo();
-    return;
-  }
+      const progress = getLocalData("courseProgress") as Map<
+        string,
+        CourseProgress
+      >;
 
-  playVideo();
-};
+      if (progress) coursesProgress.value = progress;
+      else coursesProgress.value = new Map();
 
-const muteVideoButtonClickHandler = () => {
-  if (isVideoMuted.value) {
-    isVideoMuted.value = false;
-    return;
-  }
+      if (progress?.get(courseID)) {
+        const courseLocalData = progress.get(courseID);
 
-  isVideoMuted.value = true;
-};
+        if (courseLocalData) {
+          state.currentVideoIndex = courseLocalData.currentVideo;
+          state.watchedVideos = courseLocalData.watchedVideos;
+        }
+      } else {
+        state.currentVideoIndex = 0;
+        state.videoUrl = state.course?.lessons[0]?.link || "";
+      }
+    });
 
-const playVideo = () => {
-  isVideoPlaying.value = true;
+    const sortedLessons = computed(() => {
+      if (state.course?.lessons?.length) {
+        const sorted = [...state.course?.lessons].sort(
+          (prev, next) => prev.order - next.order
+        );
 
-  if (videoPlayerRef.value) {
-    videoPlayerRef.value.play();
-  }
-};
+        return sorted;
+      } else return state.course?.lessons;
+    });
 
-const pauseVideo = () => {
-  isVideoPlaying.value = false;
+    const saveProgress = () => {
+      const progress = {
+        currentVideo: state.currentVideoIndex,
+        watchedVideos: state.watchedVideos,
+      };
 
-  if (videoPlayerRef.value) {
-    videoPlayerRef.value.pause();
-  }
-};
+      coursesProgress.value?.set(state.course.id, progress);
+      coursesProgress.value &&
+        setLocalData("courseProgress", coursesProgress.value);
+    };
 
-const playNextVideo = () => {
-  watchedVideos.value.add(currentVideoIndex.value);
-  if (course.data.lessons[currentVideoIndex.value + 1]?.status !== "locked") {
-    currentVideoIndex.value++;
-  }
+    const selectLesson = (idx: number) => {
+      state.currentVideoIndex = idx;
+      saveProgress();
+    };
 
-  saveProgress();
-  playVideo();
-};
+    watch(
+      () => state.currentVideoIndex,
+      (newIdx) => {
+        const { previewImageLink, order, link } = state.course?.lessons[
+          newIdx
+        ] as Lesson;
 
-const saveProgress = () => {
-  const progress = {
-    currentVideo: currentVideoIndex.value,
-    watchedVideos: watchedVideos.value,
-  };
+        if (link?.length) state.videoUrl = link;
 
-  courseProgress.value.set(course.data.id, progress);
-  setLocalData("courseProgress", courseProgress.value);
-};
+        if (previewImageLink && order) {
+          state.posterSrc = `${previewImageLink}/lesson-${order}.webp`;
+        }
+      }
+    );
 
-// onMounted(async () => {
-//   const lessonIdValue = lessonId.value;
-//   const res = await fetchData(lessonIdValue);
-//   const coursData = res;
-
-//   course.data = coursData;
-
-//   playVideo();
-//   const progress = getLocalData("courseProgress");
-
-//   if (!progress) return;
-
-//   const courseLocalData = progress.get(course.data.id);
-//   if (courseLocalData) {
-//     currentVideoIndex.value = coursData.currentVideo;
-//     watchedVideos.value = coursData.watchedVideos;
-//   }
-// });
-import { onBeforeMount } from "vue";
-import { fetchData } from "@/helpers";
-
-onBeforeMount(async () => {
-  const route = useRoute();
-  const coursed = await fetchData(route.params.id);
-
-  course.data = coursed;
+    return {
+      state,
+      sortedLessons,
+      selectLesson,
+      PlayIcon,
+      PauseIcon,
+      SpeakerWaveIcon,
+      SpeakerXMarkIcon,
+      loading,
+    };
+  },
 });
 </script>
 

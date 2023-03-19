@@ -1,5 +1,11 @@
 <template>
-  <div class="gen-lesson">
+  <div
+    class="gen-lesson"
+    :class="{
+      'text-gray-400 pointer-events-none': locked,
+      'bg-gray-200': active,
+    }"
+  >
     <LockClosedIcon v-if="locked" class="h-6 w-6 mr-2" />
     <PlayCircleIcon
       v-else
@@ -12,16 +18,17 @@
       @click.prevent="() => $emit('clicked')"
     >
       <span>{{ title }}</span>
+      <span v-if="!link" class="text-red-300">no video</span>
       <p class="gen-lesson__name">
         <ClockIcon class="h-4 w-4 inline-block mr-1" />
-        {{ formatTime(duration) }}
+        {{ courseDuration }}
       </p>
     </button>
     <CheckIcon v-if="watched" class="fill-green-500 h-6 w-6 ml-auto" />
   </div>
 </template>
 
-<script setup>
+<script lang="ts">
 import {
   LockClosedIcon,
   ClockIcon,
@@ -29,22 +36,55 @@ import {
   CheckIcon,
 } from "@heroicons/vue/24/solid";
 import { formatTime } from "@/helpers";
+import { defineComponent, PropType, toRefs, computed } from "vue";
+import { GenLessonListItemProps } from "@/types";
 
-defineProps({
-  duration: Number,
-  title: String,
-  locked: Boolean,
-  watched: Boolean,
+export default defineComponent({
+  components: { LockClosedIcon, ClockIcon, PlayCircleIcon, CheckIcon },
+  props: {
+    duration: {
+      type: Number as PropType<GenLessonListItemProps["duration"]>,
+      default: 0,
+    },
+    title: {
+      type: String as PropType<GenLessonListItemProps["title"]>,
+      default: "",
+    },
+    link: {
+      type: String as PropType<GenLessonListItemProps["link"]>,
+      default: "",
+    },
+    locked: {
+      type: Boolean as PropType<GenLessonListItemProps["locked"]>,
+      default: false,
+    },
+    watched: {
+      type: Boolean as PropType<GenLessonListItemProps["watched"]>,
+      default: false,
+    },
+    active: {
+      type: Boolean as PropType<GenLessonListItemProps["active"]>,
+      default: false,
+    },
+  },
+  setup(props) {
+    const { duration } = toRefs(props);
+    const courseDuration = computed(() => formatTime(duration.value));
+
+    return { courseDuration };
+  },
 });
 </script>
 
 <style>
 .gen-lesson {
-  @apply flex items-center rounded-md p-3;
+  @apply flex items-center my-1 p-3;
+  @apply rounded-md transition hover:bg-gray-200;
 }
 
 .gen-lesson__wrapper {
-  @apply font-semibold inline-flex flex-col;
+  @apply flex-col flex flex-1;
+  @apply font-semibold;
 }
 
 .gen-lesson__name {

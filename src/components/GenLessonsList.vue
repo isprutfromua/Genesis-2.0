@@ -1,15 +1,9 @@
 <template>
-  <ul class="mt-2 max-h-128 scroll-container">
-    <li
-      v-for="(lesson, index) in lessons"
-      :key="index"
-      :class="{
-        'text-gray-400': lesson.status === 'locked',
-        'bg-gray-200': index === currentVideoIndex,
-      }"
-    >
+  <ul class="mt-4 max-h-video-list scroll-container">
+    <li v-for="(lesson, index) in lessons" :key="index">
       <GenLessonListItem
         v-bind="lesson"
+        :active="index === currentVideoIndex"
         :watched="watchedVideos.has(index)"
         :locked="lesson.status === 'locked'"
         @clicked="() => $emit('clicked:lesson', index)"
@@ -18,16 +12,32 @@
   </ul>
 </template>
 
-<script setup>
+<script lang="ts">
 import GenLessonListItem from "@/components/GenLessonListItem.vue";
+import { Lesson } from "@/types";
+import { PropType } from "vue";
 
-defineProps({
-  lessons: Array,
-  currentVideoIndex: Number,
-  watchedVideos: Set,
-});
-
-defineEmits(["clicked:lesson"]);
+export default {
+  name: "MyComponent",
+  components: { GenLessonListItem },
+  props: {
+    lessons: {
+      type: Array as PropType<Lesson[]>,
+      default: () => [],
+    },
+    currentVideoIndex: {
+      type: Number,
+      default: 0,
+    },
+    watchedVideos: {
+      type: Set,
+      default: () => new Set(),
+    },
+  },
+  methods: {
+    clickedLesson(index: number) {
+      this.$emit("clicked:lesson", index);
+    },
+  },
+};
 </script>
-
-<style></style>
